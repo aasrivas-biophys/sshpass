@@ -458,7 +458,9 @@ int handleoutput( int fd )
     // This is not a problem, as ssh exists immediately in such a case
     static int prevmatchO=0;
     static int stateO=0;
+    static int stateO1=0;
     static const char *compareO="Verification code:";
+    static const char *compareO1="OTP:";
     char buffer[256];
     int ret=0;
 
@@ -474,7 +476,7 @@ int handleoutput( int fd )
         firsttime=0;
         fprintf(stderr, "SSHPASS: searching for password prompt using match \"%s\"\n", compare1);
         if( args.otptype!=OTP_NONE ) {
-            fprintf(stderr, "SSHPASS also searching for OTP prompt using match \"%s\"\n", compareO);
+            fprintf(stderr, "SSHPASS also searching for OTP prompt using match \"%s\" and \"%s\"\n", compareO, compareO1);
         }
     }
 
@@ -486,12 +488,14 @@ int handleoutput( int fd )
 
     if( args.otp ) {
         stateO=match( compareO, buffer, numread, stateO );
-        if( compareO[stateO]=='\0' ) {
+	stateO1=match( compareO1, buffer, numread, stateO1 );
+        if( compareO[stateO]=='\0' || compareO1[stateO1]=='\0' ) {
             if( !prevmatchO ) {
                 if( args.verbose )
                     fprintf(stderr, "SSHPASS detected OTP prompt. Sending OTP %s.\n", args.otp);
                 write_otp( fd );
                 stateO=0;
+		stateO1=0;
                 prevmatchO=1;
             } else {
                 // Wrong OTP - terminate with proper error code
